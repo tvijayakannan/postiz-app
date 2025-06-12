@@ -5,6 +5,9 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    env:
+      # Update this version manually when releasing a new version
+      VERSION: v1.50.0.1
     steps:
       - uses: actions/checkout@v3
       - name: Log in to GitHub Container Registry
@@ -14,6 +17,13 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.TOKEN }}
       - name: Build Docker Image
-        run: docker build -t ghcr.io/${{ github.repository_owner }}/postiz-app:latest .
-      - name: Push Docker Image
-        run: docker push ghcr.io/${{ github.repository_owner }}/postiz-app:latest
+        run: |
+          # Build the image once
+          docker build -t ghcr.io/${{ github.repository_owner }}/postiz-app:latest .
+          # Create additional tags without rebuilding
+          docker tag ghcr.io/${{ github.repository_owner }}/postiz-app:latest ghcr.io/${{ github.repository_owner }}/postiz-app:${{ env.VERSION }}
+      - name: Push Docker Images
+        run: |
+          # Push all tagged versions
+          docker push ghcr.io/${{ github.repository_owner }}/postiz-app:${{ env.VERSION }}
+          docker push ghcr.io/${{ github.repository_owner }}/postiz-app:latest
